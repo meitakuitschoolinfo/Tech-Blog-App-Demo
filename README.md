@@ -720,59 +720,59 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> A[GET /login で画面表示]
-    A --> B[email + password 入力 → POST /login]
-    B --> C[Spring Security が受信]
-    C --> D[UserService.loadUserByUsername email]
+    Start([開始]) --> A["GET /login で画面表示"]
+    A --> B["email と password を入力 → POST /login"]
+    B --> C["Spring Security が受信"]
+    C --> D["UserService.loadUserByUsername(email)"]
     D --> E{email が存在?}
-    E -- No --> F[/login?error にリダイレクト]
-    E -- Yes --> G[PasswordEncoder.matches で照合]
+    E -- No --> F["/login?error にリダイレクト"]
+    E -- Yes --> G["PasswordEncoder.matches で照合"]
     G --> H{一致?}
     H -- No --> F
-    H -- Yes --> I[セッション開始 → /admin/blogs にリダイレクト]
-    F --> End([終了])
-    I --> End
+    H -- Yes --> I["セッション開始 → /admin/blogs にリダイレクト"]
+    F --> Goal([終了])
+    I --> Goal
 ```
 
 ### 10-4. ブログ新規登録
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> A[GET /admin/blogs/new で空フォーム表示]
-    A --> B[入力して POST /admin/blogs]
-    B --> C[@Valid でバリデーション]
+    Start([開始]) --> A["GET /admin/blogs/new で空フォーム表示"]
+    A --> B["入力して POST /admin/blogs"]
+    B --> C["@Valid でバリデーション"]
     C --> D{エラーあり?}
-    D -- Yes --> E[再描画<br/>categories と isEdit=false を詰め直す]
-    E --> End1([終了])
-    D -- No --> F[BlogService.register form]
-    F --> G[categoryId → Category Entity に解決]
+    D -- Yes --> E["再描画 (categories と isEdit=false を再設定)"]
+    E --> Goal1([終了])
+    D -- No --> F["BlogService.register(form)"]
+    F --> G["categoryId を Category Entity に解決"]
     G --> H{カテゴリー存在?}
-    H -- No --> I[ResourceNotFoundException]
-    I --> End1
-    H -- Yes --> J[Form → Blog Entity 詰め替え]
-    J --> K[blogRepository.save → INSERT]
-    K --> L[addFlashAttribute message]
-    L --> M[Redirect → /admin/blogs]
-    M --> End([終了])
+    H -- No --> I["ResourceNotFoundException"]
+    I --> Goal1
+    H -- Yes --> J["Form を Blog Entity に詰め替え"]
+    J --> K["blogRepository.save で INSERT"]
+    K --> L["addFlashAttribute(message)"]
+    L --> M["Redirect → /admin/blogs"]
+    M --> Goal([終了])
 ```
 
 ### 10-5. ブログ編集
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> A[GET /admin/blogs/id/edit]
-    A --> B[blogService.toEditForm id<br/>DB → BlogEditForm 詰め替え]
-    B --> C[フォーム表示 isEdit=true]
-    C --> D[編集して POST /admin/blogs/id/edit]
-    D --> E[@Valid 実行]
+    Start([開始]) --> A["GET /admin/blogs/{id}/edit"]
+    A --> B["blogService.toEditForm(id) で DB を BlogEditForm に詰め替え"]
+    B --> C["フォーム表示 (isEdit=true)"]
+    C --> D["編集して POST /admin/blogs/{id}/edit"]
+    D --> E["@Valid 実行"]
     E --> F{エラーあり?}
-    F -- Yes --> G[再描画]
-    G --> End1([終了])
-    F -- No --> H[blogService.update form]
-    H --> I[既存Blogを取得 → 値を上書き → save UPDATE]
-    I --> J[addFlashAttribute message]
-    J --> K[Redirect → /admin/blogs]
-    K --> End([終了])
+    F -- Yes --> G["再描画"]
+    G --> Goal1([終了])
+    F -- No --> H["blogService.update(form)"]
+    H --> I["既存Blogを取得し値を上書きして save (UPDATE)"]
+    I --> J["addFlashAttribute(message)"]
+    J --> K["Redirect → /admin/blogs"]
+    K --> Goal([終了])
 ```
 
 ### 10-6. ブログ削除
@@ -817,53 +817,53 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> A[GET /admin/register で空フォーム]
-    A --> B[入力 → POST /admin/register]
-    B --> C[@Valid 実行]
+    Start([開始]) --> A["GET /admin/register で空フォーム"]
+    A --> B["入力 → POST /admin/register"]
+    B --> C["@Valid 実行"]
     C --> D{エラーあり?}
-    D -- Yes --> E[再描画]
-    E --> End1([終了])
-    D -- No --> F[userService.register form]
-    F --> G[existsByEmail でチェック]
+    D -- Yes --> E["再描画"]
+    E --> Goal1([終了])
+    D -- No --> F["userService.register(form)"]
+    F --> G["existsByEmail でチェック"]
     G --> H{既に存在?}
-    H -- Yes --> I[IllegalArgumentException]
-    I --> J[Controller で catch → bindingResult.reject]
+    H -- Yes --> I["IllegalArgumentException"]
+    I --> J["Controller で catch → bindingResult.reject"]
     J --> E
-    H -- No --> K[passwordEncoder.encode 生 → BCryptハッシュ]
-    K --> L[User Entity 作成 → save INSERT]
-    L --> M[addFlashAttribute message]
-    M --> N[Redirect → /login]
-    N --> End([終了])
+    H -- No --> K["passwordEncoder.encode で BCryptハッシュ化"]
+    K --> L["User Entity 作成 → save (INSERT)"]
+    L --> M["addFlashAttribute(message)"]
+    M --> N["Redirect → /login"]
+    N --> Goal([終了])
 ```
 
 ### 10-9. プロフィール更新
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> A[GET /admin/profile]
-    A --> B[@AuthenticationPrincipal で本人取得<br/>URLからIDは受け取らない]
-    B --> C[userService.findByEmail principal.username]
-    C --> D[User → UserRegisterForm 詰め替え]
-    D --> E[profile.html 表示]
-    E --> F[編集 → POST /admin/profile]
-    F --> G[@Valid]
+    Start([開始]) --> A["GET /admin/profile"]
+    A --> B["@AuthenticationPrincipal で本人取得 (URLからIDは取らない)"]
+    B --> C["userService.findByEmail(principal.username)"]
+    C --> D["User を UserRegisterForm に詰め替え"]
+    D --> E["profile.html 表示"]
+    E --> F["編集 → POST /admin/profile"]
+    F --> G["@Valid 実行"]
     G --> H{エラーあり?}
-    H -- Yes --> I[再描画]
-    I --> End1([終了])
-    H -- No --> J[userService.update currentUser.id, form]
-    J --> K{emailを変更してる?}
-    K -- Yes --> L[existsByEmail で重複チェック]
+    H -- Yes --> I["再描画"]
+    I --> Goal1([終了])
+    H -- No --> J["userService.update(currentUser.id, form)"]
+    J --> K{emailを変更?}
+    K -- Yes --> L["existsByEmail で重複チェック"]
     L --> M{重複?}
-    M -- Yes --> N[IllegalArgumentException]
-    N --> O[Controller で catch → 再描画]
-    O --> End1
-    M -- No --> P[name/email を上書き]
+    M -- Yes --> N["IllegalArgumentException"]
+    N --> O["Controller で catch → 再描画"]
+    O --> Goal1
+    M -- No --> P["name と email を上書き"]
     K -- No --> P
-    P --> Q[passwordEncoder.encode 新パスワード]
-    Q --> R[save → UPDATE]
-    R --> S[addFlashAttribute message]
-    S --> T[Redirect → /admin/profile]
-    T --> End([終了])
+    P --> Q["passwordEncoder.encode で新パスワードをハッシュ化"]
+    Q --> R["save (UPDATE)"]
+    R --> S["addFlashAttribute(message)"]
+    S --> T["Redirect → /admin/profile"]
+    T --> Goal([終了])
 ```
 
 ---
