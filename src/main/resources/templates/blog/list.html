@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間を宣言する -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!-- 共通headフラグメントを呼び出す（ブラウザタブに「ホーム」と表示） -->
+<head th:replace="~{fragments/layout :: head('ホーム')}"></head>
+
+<body class="min-h-screen bg-slate-50 font-sans">
+
+    <!-- 公開ページ共通のトップヘッダー -->
+    <header class="bg-white sticky top-0 z-30 shadow-sm shadow-blue-900/5">
+        <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+            <!-- ロゴ：トップへのリンク -->
+            <a th:href="@{/}" class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 font-bold">
+                    BT
+                </div>
+                <span class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-blue-800 tracking-tight">
+                    BrightTech
+                </span>
+            </a>
+            <!-- 右上のログインボタン -->
+            <a th:href="@{/login}"
+               class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors flex items-center gap-2 text-sm">
+                管理者ログイン
+            </a>
+        </div>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <div class="bg-white border-b border-slate-100">
+        <div class="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight mb-6">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">テクノロジー</span>で未来を描く
+            </h1>
+            <p class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium">
+                フロントエンド、バックエンド、AIまで。最新のテック情報と実践的なノウハウをお届けする開発者向けブログメディア。
+            </p>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-6xl mx-auto px-4 py-12">
+
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-bold text-slate-800">最新の記事</h2>
+        </div>
+
+        <!-- 記事が0件の場合の表示 -->
+        <div th:if="${page.totalElements == 0}" class="text-center py-16 text-slate-500">
+            まだ記事が投稿されていません
+        </div>
+
+        <!-- 記事カードのグリッド -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- page.content の各 Blog をループ -->
+            <article th:each="blog : ${page.content}"
+                     class="bg-white rounded-2xl overflow-hidden shadow-sm shadow-slate-200 border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                <!-- カードクリックで詳細へ。a タグで囲んで全体をリンク化 -->
+                <a th:href="@{/blogs/{id}(id=${blog.id})}" class="flex flex-col h-full">
+                    <!-- アイキャッチ画像（URLがあれば表示） -->
+                    <div class="aspect-[16/9] overflow-hidden bg-slate-100 relative">
+                        <img th:if="${!#strings.isEmpty(blog.imageUrl)}"
+                             th:src="${blog.imageUrl}" th:alt="${blog.title}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <!-- カテゴリーバッジ -->
+                        <div class="absolute top-4 left-4">
+                            <span class="inline-block px-3 py-1 bg-cyan-50 text-cyan-700 text-xs font-bold rounded-full border border-cyan-100"
+                                  th:text="${blog.category.name}">カテゴリー</span>
+                        </div>
+                    </div>
+                    <!-- 本文要約エリア -->
+                    <div class="p-6 flex flex-col flex-grow">
+                        <!-- 公開日時 -->
+                        <div class="text-sm text-slate-400 font-medium mb-3"
+                             th:text="${#temporals.format(blog.publishedAt, 'yyyy/MM/dd')}">2026/01/01</div>
+                        <!-- タイトル -->
+                        <h3 class="text-xl font-bold text-slate-800 leading-tight mb-4 group-hover:text-blue-600 transition-colors line-clamp-2"
+                            th:text="${blog.title}">タイトル</h3>
+                        <!-- 本文プレビュー（先頭100文字） -->
+                        <p class="text-slate-500 line-clamp-3 text-sm flex-grow mb-4 leading-relaxed"
+                           th:text="${blog.content}">本文プレビュー</p>
+                        <!-- 続きを読む -->
+                        <div class="flex items-center text-blue-600 font-semibold text-sm">
+                            続きを読む →
+                        </div>
+                    </div>
+                </a>
+            </article>
+        </div>
+
+        <!-- ページングUI（総ページが2以上のときだけ表示） -->
+        <div th:if="${page.totalPages > 1}" class="flex items-center justify-center space-x-2 mt-8">
+            <!-- 前へ：最初のページでは disabled 風にする -->
+            <a th:href="@{/blogs(page=${page.number - 1})}"
+               th:if="${!page.first}"
+               class="p-2 rounded-lg text-slate-500 hover:bg-slate-100">← 前へ</a>
+            <span th:unless="${!page.first}" class="p-2 rounded-lg text-slate-300">← 前へ</span>
+
+            <!-- ページ番号（0..totalPages-1 を回す） -->
+            <a th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+               th:href="@{/blogs(page=${i})}"
+               th:text="${i + 1}"
+               th:class="${i == page.number}
+                   ? 'w-10 h-10 flex items-center justify-center rounded-lg font-medium bg-blue-600 text-white shadow-md shadow-blue-200'
+                   : 'w-10 h-10 flex items-center justify-center rounded-lg font-medium text-slate-600 hover:bg-slate-100'">1</a>
+
+            <!-- 次へ：最終ページでは disabled 風にする -->
+            <a th:href="@{/blogs(page=${page.number + 1})}"
+               th:if="${!page.last}"
+               class="p-2 rounded-lg text-slate-500 hover:bg-slate-100">次へ →</a>
+            <span th:unless="${!page.last}" class="p-2 rounded-lg text-slate-300">次へ →</span>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-20">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <div class="text-xl font-bold text-white tracking-tight mb-6">BrightTech</div>
+            <p class="mb-6 max-w-md mx-auto text-sm">
+                最新のテクノロジー情報を、わかりやすく、深く発信するテックブログメディア。
+            </p>
+            <div class="text-sm">
+                &copy; <span th:text="${#dates.year(#dates.createNow())}">2026</span> BrightTech Blog. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

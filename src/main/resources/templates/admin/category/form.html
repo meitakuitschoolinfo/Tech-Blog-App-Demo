@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間を宣言する -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  共通headフラグメントを呼び出す
+  isEdit (model属性) が true なら「カテゴリー編集」、false なら「カテゴリー登録」をタイトルにする
+-->
+<head th:replace="~{fragments/layout :: head(${isEdit} ? 'カテゴリー編集' : 'カテゴリー登録')}"></head>
+
+<!-- 管理画面全体の背景 -->
+<body class="min-h-screen bg-slate-50 font-sans">
+
+    <!-- 管理画面の上部ヘッダー -->
+    <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+        <h1 class="text-xl font-bold text-slate-800"
+            th:text="${isEdit} ? 'カテゴリー編集' : 'カテゴリー登録'">カテゴリー登録</h1>
+        <!-- 一覧へ戻るリンク -->
+        <a th:href="@{/admin/categories}" class="text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+            一覧に戻る
+        </a>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-xl mx-auto p-4 md:p-8">
+        <!--
+          カテゴリー登録／編集フォーム
+          - th:action は
+              isEdit=true  → POST /admin/categories/{id}/edit
+              isEdit=false → POST /admin/categories
+          - th:object は新規・編集とも同じ "categoryForm" を使う（Form自体が1クラスのため）
+        -->
+        <form th:action="${isEdit} ? @{/admin/categories/{id}/edit(id=${categoryForm.id})} : @{/admin/categories}"
+              th:object="${categoryForm}" method="post"
+              class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+            <!-- 編集時のみ id をhiddenで送信する -->
+            <input type="hidden" th:if="${isEdit}" th:field="*{id}">
+
+            <div class="p-6 md:p-8">
+                <label for="name" class="block text-sm font-semibold text-slate-700 mb-2">
+                    カテゴリー名 <span class="text-red-500">*</span>
+                </label>
+                <!-- th:field="*{name}" は CategoryForm.name と紐づく -->
+                <input type="text" th:field="*{name}"
+                       class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                       placeholder="例: フロントエンド">
+                <!-- name 項目のバリデーションエラー表示 -->
+                <div th:replace="~{fragments/layout :: fieldError('name')}"></div>
+            </div>
+
+            <!-- フォーム下部ボタン群 -->
+            <div class="px-6 md:px-8 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <!-- キャンセル -->
+                <a th:href="@{/admin/categories}"
+                   class="px-6 py-2.5 rounded-lg font-medium text-slate-600 hover:bg-slate-200 transition-colors">
+                    キャンセル
+                </a>
+                <!-- 送信ボタン -->
+                <button type="submit"
+                        class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md"
+                        th:text="${isEdit} ? '更新する' : '登録する'">
+                    登録する
+                </button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

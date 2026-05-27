@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間を宣言する（th:〇〇 属性を使うため） -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!-- 共通headフラグメントを引数 'ログイン' で呼び出して差し込む -->
+<head th:replace="~{fragments/layout :: head('ログイン')}"></head>
+
+<!-- ログイン画面の背景を薄い青のグラデーションにする -->
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center p-4 font-sans">
+
+    <!-- 画面中央に置く白いカード -->
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12">
+
+        <!-- カードの上部：アイコンと見出し -->
+        <div class="text-center mb-10">
+            <!-- グラデーション円形アイコン（純粋装飾） -->
+            <div class="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 mx-auto mb-6 text-2xl font-bold">
+                BT
+            </div>
+            <!-- 画面のタイトル -->
+            <h1 class="text-2xl font-bold text-slate-800">管理者ログイン</h1>
+            <!-- サブタイトル -->
+            <p class="text-slate-500 mt-2 text-sm">システムの管理画面にアクセスします</p>
+        </div>
+
+        <!--
+          ログインフォーム本体
+          - th:action は Spring Security の標準処理 /login へ POST する
+          - th:object は LoginForm（GET時にControllerが空のLoginFormをmodelに入れる前提）と紐づける
+          - method="post" にすると Thymeleaf+SpringSecurity が CSRF トークンを自動で挿入する
+        -->
+        <form th:action="@{/login}" th:object="${loginForm}" method="post" class="space-y-6">
+
+            <!-- 認証失敗時のエラー表示（Spring Security から ?error が付いた時） -->
+            <div th:if="${param.error}" class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                メールアドレスまたはパスワードが間違っています
+            </div>
+
+            <!-- ログアウト直後のメッセージ表示（?logout が付いた時） -->
+            <div th:if="${param.logout}" class="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
+                ログアウトしました
+            </div>
+
+            <!-- メールアドレス入力 -->
+            <div>
+                <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">メールアドレス</label>
+                <!--
+                  th:field="*{email}" は LoginForm.email と紐づく。
+                  この1行で  name="email" / id="email" / value="..."  を自動生成する。
+                  → ここを *{email} と書く事と、Java側を private String email; にする事が
+                    「セット」になっている事をしっかり押さえる。
+                -->
+                <input type="email" th:field="*{email}"
+                       class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                       placeholder="admin@example.com">
+                <!-- email 項目のバリデーションエラーがあれば赤字で表示する -->
+                <div th:replace="~{fragments/layout :: fieldError('email')}"></div>
+            </div>
+
+            <!-- パスワード入力 -->
+            <div>
+                <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">パスワード</label>
+                <!-- th:field="*{password}" は LoginForm.password と紐づく -->
+                <input type="password" th:field="*{password}"
+                       class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                       placeholder="••••••••">
+                <!-- password 項目のバリデーションエラーがあれば赤字で表示する -->
+                <div th:replace="~{fragments/layout :: fieldError('password')}"></div>
+            </div>
+
+            <!-- 送信ボタン -->
+            <button type="submit"
+                    class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200">
+                ログインする
+            </button>
+        </form>
+
+        <!-- 補助リンク群 -->
+        <div class="mt-8 text-center space-y-4">
+            <p class="text-sm text-slate-500">
+                管理者アカウントをお持ちでない場合は
+                <!-- 新規登録画面へのリンク（Spring の th:href + URLヘルパ） -->
+                <a th:href="@{/admin/register}" class="text-blue-600 hover:underline ml-1 font-medium">新規登録</a>
+            </p>
+            <!-- 公開ブログ一覧へ戻るリンク -->
+            <a th:href="@{/}" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors block mx-auto">
+                ← ブログトップへ戻る
+            </a>
+        </div>
+    </div>
+</body>
+</html>

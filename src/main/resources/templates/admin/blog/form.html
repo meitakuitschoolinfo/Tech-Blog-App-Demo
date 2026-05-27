@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間を宣言する -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  共通headフラグメントを呼び出す
+  isEdit (model属性) が true なら「ブログの編集」、false なら「ブログの登録」というタイトルにする
+-->
+<head th:replace="~{fragments/layout :: head(${isEdit} ? 'ブログの編集' : 'ブログの登録')}"></head>
+
+<!-- 管理画面全体の背景 -->
+<body class="min-h-screen bg-slate-50 font-sans">
+
+    <!-- 管理画面の上部ヘッダー -->
+    <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+        <!-- ページタイトル（isEditで「編集」「登録」を切り替え） -->
+        <h1 class="text-xl font-bold text-slate-800" th:text="${isEdit} ? 'ブログの編集' : 'ブログの登録'">ブログの登録</h1>
+        <!-- 一覧へ戻るリンク -->
+        <a th:href="@{/admin/blogs}" class="text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+            一覧に戻る
+        </a>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-4xl mx-auto p-4 md:p-8">
+        <!--
+          ブログ登録／編集フォーム
+          - th:action はサーバーへの送信先URL
+              isEdit=true  → POST /admin/blogs/{id}/edit
+              isEdit=false → POST /admin/blogs
+          - th:object は登録用と編集用で同じ "blogForm" という名前で受け取る
+              （Controllerが BlogRegisterForm か BlogEditForm をmodelに入れる）
+          - enctype="multipart/form-data" は画像ファイルアップロードに必須
+              （これが無いと MultipartFile が空で届く）
+        -->
+        <form th:action="${isEdit} ? @{/admin/blogs/{id}/edit(id=${blogForm.id})} : @{/admin/blogs}"
+              th:object="${blogForm}" method="post" enctype="multipart/form-data"
+              class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+            <!-- 編集時のみ、idをhiddenで送信する（BlogEditFormのみidフィールドを持つ） -->
+            <input type="hidden" th:if="${isEdit}" th:field="*{id}">
+
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    <!-- 左カラム：タイトル＆本文 -->
+                    <div class="md:col-span-2 space-y-6">
+
+                        <!-- タイトル -->
+                        <div>
+                            <label for="title" class="block text-sm font-semibold text-slate-700 mb-2">
+                                ブログのタイトル <span class="text-red-500">*</span>
+                            </label>
+                            <!-- th:field="*{title}" は BlogXxxForm.title と紐づく -->
+                            <input type="text" th:field="*{title}"
+                                   class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-800"
+                                   placeholder="目を引くタイトルを入力...">
+                            <!-- title 項目のバリデーションエラー表示 -->
+                            <div th:replace="~{fragments/layout :: fieldError('title')}"></div>
+                        </div>
+
+                        <!-- 本文 -->
+                        <div>
+                            <label for="content" class="block text-sm font-semibold text-slate-700 mb-2">
+                                詳細（マークダウン風） <span class="text-red-500">*</span>
+                            </label>
+                            <!-- th:field="*{content}" は BlogXxxForm.content と紐づく -->
+                            <textarea th:field="*{content}" rows="15"
+                                      class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 leading-relaxed"
+                                      placeholder="記事の本文を入力してください。&#10;## で見出しを作成できます。"></textarea>
+                            <!-- content 項目のバリデーションエラー表示 -->
+                            <div th:replace="~{fragments/layout :: fieldError('content')}"></div>
+                        </div>
+                    </div>
+
+                    <!-- 右カラム：カテゴリーと画像URL -->
+                    <div class="space-y-6">
+
+                        <!-- カテゴリー選択 -->
+                        <div>
+                            <label for="categoryId" class="block text-sm font-semibold text-slate-700 mb-2">
+                                カテゴリー <span class="text-red-500">*</span>
+                            </label>
+                            <!--
+                              th:field="*{categoryId}" は BlogXxxForm.categoryId（Long型）と紐づく
+                              option の value はカテゴリーの id（Long）、表示は name
+                              th:each で Controller がmodelに入れた categories: List<Category> を回す
+                            -->
+                            <select th:field="*{categoryId}"
+                                    class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700">
+                                <option value="">選択してください</option>
+                                <option th:each="cat : ${categories}"
+                                        th:value="${cat.id}"
+                                        th:text="${cat.name}">カテゴリー名</option>
+                            </select>
+                            <!-- categoryId 項目のバリデーションエラー表示 -->
+                            <div th:replace="~{fragments/layout :: fieldError('categoryId')}"></div>
+                        </div>
+
+                        <!-- アイキャッチ画像：ファイルアップロード方式 -->
+                        <div>
+                            <label for="imageFile" class="block text-sm font-semibold text-slate-700 mb-2">
+                                アイキャッチ画像（ファイルを選択）
+                            </label>
+
+                            <!--
+                              既存画像URLを hidden で送り返す（編集時の継続用）
+                              編集画面で「新しい画像を選ばなかった場合」、Service側で
+                              この hidden 値をそのまま使って画像を維持する
+                            -->
+                            <input type="hidden" th:field="*{imageUrl}">
+
+                            <!--
+                              ファイル選択 input
+                              - th:field で BlogXxxForm.imageFile（MultipartFile）と紐づく
+                              - accept="image/*" でブラウザ側のファイル選択ダイアログを画像のみに制限
+                              - onchange でJavaScriptを呼び、選択した画像を即プレビュー表示する
+                            -->
+                            <input type="file" th:field="*{imageFile}" accept="image/*"
+                                   onchange="previewImage(event)"
+                                   class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+
+                            <!-- imageFile 項目のバリデーションエラー表示（サイズ超過等） -->
+                            <div th:replace="~{fragments/layout :: fieldError('imageFile')}"></div>
+
+                            <!--
+                              プレビュー領域
+                              - 初期表示：blogForm.imageUrl があれば既存画像、無ければ非表示
+                              - ファイル選択時：JavaScriptが #imagePreview の src を差し替えて表示
+                            -->
+                            <div class="mt-4 aspect-[16/9] rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+                                <img id="imagePreview"
+                                     th:src="${!#strings.isEmpty(blogForm.imageUrl)} ? ${blogForm.imageUrl} : ''"
+                                     th:style="${!#strings.isEmpty(blogForm.imageUrl)} ? 'display:block' : 'display:none'"
+                                     alt="プレビュー"
+                                     class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フォーム下部ボタン群 -->
+            <div class="px-6 md:px-8 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <!-- キャンセル：一覧に戻る -->
+                <a th:href="@{/admin/blogs}"
+                   class="px-6 py-2.5 rounded-lg font-medium text-slate-600 hover:bg-slate-200 transition-colors">
+                    キャンセル
+                </a>
+                <!-- 送信ボタン（isEditで「更新する」「登録する」を切り替え） -->
+                <button type="submit"
+                        class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md shadow-blue-200"
+                        th:text="${isEdit} ? '更新する' : '登録する'">
+                    登録する
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <!--
+      ファイル選択直後にプレビュー画像を差し替えるためのスクリプト
+      - FileReader で選択ファイルを Base64 (data URL) として読み込む
+      - 読み込み完了時、#imagePreview の src に詰めて表示する
+      - 「アップロードする前」に見た目で確認できる
+    -->
+    <script>
+        function previewImage(event) {
+            // input[type=file] から、選択された最初のファイルを取り出す
+            const file = event.target.files && event.target.files[0];
+            // 選択がキャンセルされた場合は何もしない
+            if (!file) return;
+            // FileReader はブラウザ標準のファイル読み込みAPI
+            const reader = new FileReader();
+            // 読み込み完了時のコールバック
+            reader.onload = function (e) {
+                // プレビュー用 <img> を取得し、src に Base64 (data URL) を設定
+                const img = document.getElementById('imagePreview');
+                if (img) {
+                    img.src = e.target.result;
+                    // それまで非表示だった場合の対応
+                    img.style.display = 'block';
+                }
+            };
+            // ファイルを data URL として読み込み開始（完了時に onload が呼ばれる）
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

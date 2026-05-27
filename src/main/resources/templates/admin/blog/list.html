@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間と Spring Security 用の名前空間を宣言する -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- 共通headフラグメントを呼び出す -->
+<head th:replace="~{fragments/layout :: head('ブログ管理')}"></head>
+
+<body class="min-h-screen bg-slate-50 font-sans">
+
+    <!-- 管理画面の上部ヘッダー -->
+    <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+        <div class="flex items-center gap-6">
+            <h1 class="text-xl font-bold text-slate-800">ブログ管理</h1>
+            <!-- 管理画面の簡易ナビゲーション -->
+            <nav class="hidden md:flex items-center gap-4 text-sm font-medium">
+                <a th:href="@{/admin/blogs}" class="text-blue-600">ブログ</a>
+                <a th:href="@{/admin/categories}" class="text-slate-500 hover:text-blue-600">カテゴリー</a>
+                <a th:href="@{/admin/profile}" class="text-slate-500 hover:text-blue-600">プロフィール</a>
+            </nav>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- 公開ページへの遷移 -->
+            <a th:href="@{/}" class="text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors hidden sm:block">サイトを表示</a>
+            <!-- ログアウト：Spring Security のデフォルト /logout に POST する -->
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit" class="text-sm font-medium text-slate-600 bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors">ログアウト</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="p-4 md:p-8">
+
+        <!-- フラッシュメッセージ（登録／更新／削除の成功通知） -->
+        <div th:replace="~{fragments/layout :: flash}"></div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+            <!-- 一覧ヘッダー：タイトル＆新規登録ボタン -->
+            <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <h2 class="text-lg font-bold text-slate-800">ブログ一覧</h2>
+                <a th:href="@{/admin/blogs/new}"
+                   class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-md shadow-blue-200">
+                    + 新規登録
+                </a>
+            </div>
+
+            <!-- 0件のときのメッセージ -->
+            <div th:if="${page.totalElements == 0}" class="text-center py-12 text-slate-500">
+                登録されているブログはありません
+            </div>
+
+            <!-- データテーブル -->
+            <div th:unless="${page.totalElements == 0}" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+                            <th class="py-4 px-6 font-semibold w-16">ID</th>
+                            <th class="py-4 px-6 font-semibold">タイトル</th>
+                            <th class="py-4 px-6 font-semibold w-32">カテゴリー</th>
+                            <th class="py-4 px-6 font-semibold w-32">公開日</th>
+                            <th class="py-4 px-6 font-semibold w-32 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <!-- page.content の各 Blog をループ -->
+                        <tr th:each="blog : ${page.content}" class="hover:bg-slate-50 transition-colors">
+                            <td class="py-4 px-6 text-slate-500 text-sm" th:text="${blog.id}">1</td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-3">
+                                    <!-- サムネ画像（URLがあるときだけ） -->
+                                    <div th:if="${!#strings.isEmpty(blog.imageUrl)}" class="w-12 h-12 rounded bg-slate-200 overflow-hidden flex-shrink-0">
+                                        <img th:src="${blog.imageUrl}" alt="" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="font-semibold text-slate-800 line-clamp-1" th:text="${blog.title}">タイトル</div>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="inline-block px-3 py-1 bg-cyan-50 text-cyan-700 text-xs font-bold rounded-full border border-cyan-100"
+                                      th:text="${blog.category.name}">カテゴリー</span>
+                            </td>
+                            <td class="py-4 px-6 text-sm text-slate-500"
+                                th:text="${#temporals.format(blog.publishedAt, 'yyyy/MM/dd')}">2026/01/01</td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center justify-center gap-2">
+                                    <!-- 編集ボタン -->
+                                    <a th:href="@{/admin/blogs/{id}/edit(id=${blog.id})}"
+                                       class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-xs font-medium">編集</a>
+                                    <!-- 削除：POSTで送信する（GETでは絶対にやらない） -->
+                                    <form th:action="@{/admin/blogs/{id}/delete(id=${blog.id})}" method="post" class="inline"
+                                          onsubmit="return confirm('本当にこのブログを削除しますか？');">
+                                        <button type="submit"
+                                                class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-xs font-medium">
+                                            削除
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ページングUI -->
+        <div th:if="${page.totalPages > 1}" class="flex items-center justify-center space-x-2 mt-8">
+            <a th:href="@{/admin/blogs(page=${page.number - 1})}" th:if="${!page.first}"
+               class="p-2 rounded-lg text-slate-500 hover:bg-slate-100">← 前へ</a>
+            <a th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+               th:href="@{/admin/blogs(page=${i})}"
+               th:text="${i + 1}"
+               th:class="${i == page.number}
+                   ? 'w-10 h-10 flex items-center justify-center rounded-lg font-medium bg-blue-600 text-white shadow-md shadow-blue-200'
+                   : 'w-10 h-10 flex items-center justify-center rounded-lg font-medium text-slate-600 hover:bg-slate-100'">1</a>
+            <a th:href="@{/admin/blogs(page=${page.number + 1})}" th:if="${!page.last}"
+               class="p-2 rounded-lg text-slate-500 hover:bg-slate-100">次へ →</a>
+        </div>
+    </main>
+</body>
+</html>

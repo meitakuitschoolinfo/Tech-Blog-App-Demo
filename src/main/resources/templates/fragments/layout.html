@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!-- Thymeleafの名前空間（xmlns:th）を宣言し、th:〇〇 属性を使えるようにする -->
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  共通headフラグメント
+  使い方： 各HTMLの <head> で  th:replace="~{fragments/layout :: head('画面タイトル')}"
+  引数 title はブラウザのタブに表示される文字列になる
+-->
+<head th:fragment="head(title)">
+    <!-- ページ全体の文字コードをUTF-8に指定する -->
+    <meta charset="UTF-8">
+    <!-- スマホ等でも幅が崩れないようにviewportを設定する -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSRFトークンをmetaに埋め込む（JSからAJAXする際に使える / Spring Securityが自動で値を入れる） -->
+    <meta name="_csrf" th:content="${_csrf?.token}">
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+    <!-- ブラウザのタブに表示されるタイトル。引数 title が入る -->
+    <title th:text="${title} + ' | BrightTech'">BrightTech</title>
+    <!-- Tailwind CSS を CDN で読み込む（学習・開発用。本番ではビルド版を使う） -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!--
+  汎用エラー表示フラグメント
+  使い方： <div th:replace="~{fragments/layout :: fieldError('title')}"></div>
+  引数 fieldName のバリデーションエラーがあれば赤字で表示する
+-->
+<div th:fragment="fieldError(fieldName)" th:if="${#fields.hasErrors(fieldName)}"
+     class="mt-1 text-sm text-red-600"
+     th:errors="*{__${fieldName}__}">
+    エラーメッセージがここに表示される
+</div>
+
+<!--
+  フォーム全体エラー表示フラグメント
+  使い方： <div th:replace="~{fragments/layout :: globalErrors}"></div>
+  bindingResult.reject(...) で登録されたフォーム全体のエラーを表示する
+-->
+<div th:fragment="globalErrors" th:if="${#fields.hasGlobalErrors()}"
+     class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+    <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">エラーメッセージ</p>
+</div>
+
+<!--
+  フラッシュメッセージ表示フラグメント
+  使い方： <div th:replace="~{fragments/layout :: flash}"></div>
+  Controller の RedirectAttributes.addFlashAttribute("message", ...) / ("errorMessage", ...) を表示する
+-->
+<div th:fragment="flash">
+    <!-- 成功メッセージ：緑色のバナー -->
+    <div th:if="${message}"
+         class="mb-6 p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-2">
+        <span class="font-medium" th:text="${message}">成功メッセージ</span>
+    </div>
+    <!-- エラーメッセージ：赤色のバナー -->
+    <div th:if="${errorMessage}"
+         class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center gap-2">
+        <span class="font-medium" th:text="${errorMessage}">エラーメッセージ</span>
+    </div>
+</div>
+
+</html>
